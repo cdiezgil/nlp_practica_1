@@ -1,0 +1,958 @@
+<html>
+<head>
+<title>Actividad_1_Redes_Neuronales_Artificiales_ANN.ipynb</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #808080;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #cc7832;}
+.s3 { color: #6897bb;}
+.s4 { color: #6a8759;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+Actividad_1_Redes_Neuronales_Artificiales_ANN.ipynb</font>
+</center></td></tr></table>
+<pre><span class="s0">#%% md 
+</span><span class="s1"># REDES NEURONALES 
+ 
+--- 
+ 
+ 
+</span><span class="s0">#%% md 
+</span><span class="s1">## Introducción 
+</span><span class="s0">#%% md 
+</span>
+
+<span class="s1">En esta actividad vamos a utilizar una red neuronal para clasificar imágenes de prendas de ropa. Para ello, utilizaremos Keras con TensorFlow. 
+ 
+El dataset a utilizar es Fashion MNIST, un problema sencillo con imágenes pequeñas de ropa, pero más interesante que el dataset de MNIST. Puedes consultar más información sobre el dataset en [este enlace](https://github.com/zalandoresearch/fashion-mnist). 
+ 
+El código utilizado para contestar tiene que quedar claramente reflejado en el Notebook. Puedes crear nuevas celdas si así lo deseas para estructurar tu código y sus salidas. A la hora de entregar el notebook, **asegúrate de que los resultados de ejecutar tu código han quedado guardados**. Por ejemplo, a la hora de entrenar una red neuronal tiene que verse claramente un log de los resultados de cada epoch. 
+</span><span class="s0">#%% 
+</span><span class="s2">import </span><span class="s1">keras</span>
+<span class="s2">from </span><span class="s1">keras.datasets </span><span class="s2">import </span><span class="s1">fashion_mnist</span>
+<span class="s2">from </span><span class="s1">keras.models </span><span class="s2">import </span><span class="s1">Sequential</span>
+<span class="s2">from </span><span class="s1">keras.layers </span><span class="s2">import </span><span class="s1">Dense</span>
+<span class="s2">import </span><span class="s1">tensorflow </span><span class="s2">as </span><span class="s1">tf</span>
+
+<span class="s2">import </span><span class="s1">matplotlib.pyplot </span><span class="s2">as </span><span class="s1">plt</span>
+<span class="s0">#%% md 
+</span><span class="s1">En primer lugar vamos a importar el dataset Fashion MNIST (recordad que este es uno de los dataset de entranamiento que estan guardados en keras) que es el que vamos a utilizar en esta actividad: 
+</span><span class="s0">#%% 
+</span><span class="s1">mnist = tf.keras.datasets.fashion_mnist</span>
+<span class="s0">#%% md 
+</span><span class="s1">Llamar a **load_data** en este dataset nos dará dos conjuntos de dos listas, estos serán los valores de entrenamiento y prueba para los gráficos que contienen las prendas de vestir y sus etiquetas. 
+ 
+Nota: Aunque en esta actividad lo veis de esta forma, también lo vais a poder encontrar como 4 variables de esta forma: training_images, training_labels, test_images, test_labels = mnist.load_data() 
+</span><span class="s0">#%% 
+</span><span class="s1">(training_images</span><span class="s2">, </span><span class="s1">training_labels)</span><span class="s2">, </span><span class="s1">(test_images</span><span class="s2">, </span><span class="s1">test_labels) = mnist.load_data()</span>
+<span class="s0">#%% md 
+</span><span class="s1">Antes de continuar vamos a dar un vistazo a nuestro dataset, para ello vamos a ver una imagen de entrenamiento y su etiqueta o clase. 
+</span><span class="s0">#%% 
+</span><span class="s2">import </span><span class="s1">numpy </span><span class="s2">as </span><span class="s1">np</span>
+<span class="s1">np.set_printoptions(linewidth=</span><span class="s3">200</span><span class="s1">)</span>
+<span class="s2">import </span><span class="s1">matplotlib.pyplot </span><span class="s2">as </span><span class="s1">plt</span>
+<span class="s1">plt.imshow(training_images[</span><span class="s3">0</span><span class="s1">]</span><span class="s2">, </span><span class="s1">cmap=</span><span class="s4">&quot;gray&quot;</span><span class="s1">) </span><span class="s0"># recordad que siempre es preferible trabajar en blanco y negro</span>
+<span class="s0">#</span>
+<span class="s1">print(training_labels[</span><span class="s3">0</span><span class="s1">])</span>
+<span class="s1">print(training_images[</span><span class="s3">0</span><span class="s1">])</span>
+<span class="s0">#%% md 
+</span><span class="s1">Habréis notado que todos los valores numericos están entre 0 y 255. Si estamos entrenando una red neuronal, una buena practica es transformar todos los valores entre 0 y 1, un proceso llamado &quot;normalización&quot; y afortunadamente en Python es fácil normalizar una lista. Lo puedes hacer de esta manera: 
+</span><span class="s0">#%% 
+</span><span class="s1">training_images  = training_images / </span><span class="s3">255.0</span>
+<span class="s1">test_images = test_images / </span><span class="s3">255.0</span>
+<span class="s0">#%% md 
+</span><span class="s1">## 1. Información sobre el dataset 
+</span><span class="s0">#%% md 
+</span><span class="s1">Una vez tenemos los datos cargados en memoria, vamos a obtener información sobre los mismos. 
+</span><span class="s0">#%% md 
+</span><span class="s1">**Pregunta 1.1 *(0.25 puntos)*** ¿Cuántas imágenes hay de *training* y de *test*? ¿Qué tamaño tienen las imágenes? 
+</span><span class="s0">#%% 
+### Tu código aquí ###</span>
+<span class="s1">print(training_images.shape)</span>
+<span class="s1">print(test_images.shape)</span>
+
+<span class="s0">#%% md 
+</span><span class="s1">*Tu respuesta aquí* 
+ 
+Tenemos 60.000 imágenes de entrenamiento y 10.000 de test 
+El tamaño de las imágenes en ambos casos es de 28x28 
+</span><span class="s0">#%% md 
+</span><span class="s1">**Pregunta 1.2 *(0.25 puntos)*** Realizar una exploración de las variables que contienen los datos. Describir en qué consiste un example del dataset (qué información se guarda en cada imagen) y describir qué contiene la información en y. 
+</span><span class="s0">#%% 
+### Tu código aquí ###</span>
+<span class="s2">import </span><span class="s1">matplotlib.pyplot </span><span class="s2">as </span><span class="s1">plt</span>
+
+<span class="s1">print(</span><span class="s4">&quot;Valor mínimo de los píxeles:&quot;</span><span class="s2">, </span><span class="s1">np.min(training_images))</span>
+<span class="s1">print(</span><span class="s4">&quot;Valor máximo de los píxeles:&quot;</span><span class="s2">, </span><span class="s1">np.max(training_images))</span>
+<span class="s1">print(</span><span class="s4">&quot;Valor promedio de los píxeles:&quot;</span><span class="s2">, </span><span class="s1">np.mean(training_images))</span>
+<span class="s1">print(</span><span class="s4">&quot;Desviación estándar de los píxeles:&quot;</span><span class="s2">, </span><span class="s1">np.std(training_images))</span>
+
+<span class="s0"># Verificar el número de clases en el conjunto de entrenamiento</span>
+<span class="s1">num_classes = len(np.unique(training_labels))</span>
+<span class="s1">print(</span><span class="s4">&quot;Número de clases en el conjunto de entrenamiento:&quot;</span><span class="s2">, </span><span class="s1">num_classes)</span>
+
+<span class="s0">#%% md 
+</span><span class="s1">*Tu respuesta aquí* 
+Cada fila tienen una imagen de 28x28 píxeles. 
+Como hemos normalizado los datos, los pixeles contienen valores entre 0 y 1. 
+La variable y contiene el número de clase de cada imagen. 
+ 
+</span><span class="s0">#%% md 
+</span><span class="s1">## 2. Creación del Modelo 
+</span><span class="s0">#%% md 
+</span><span class="s1">Ahora vamos a definir el modelo, pero antes vamos a repasar algunos comandos y conceptos muy útiles: 
+* **Sequential**: Eso define una SECUENCIA de capas en la red neuronal 
+* **Dense**: Añade una capa de neuronas 
+* **Flatten**: ¿Recuerdas cómo eran las imágenes cuando las imprimiste para poder verlas? Un cuadrado, Flatten toma ese cuadrado y lo convierte en un vector de una dimensión. 
+ 
+Cada capa de neuronas necesita una función de activación. Normalmente se usa la función relu en las capas intermedias y softmax en la ultima capa (en problemas de clasificación de más de dos items) 
+* **Relu** significa que &quot;Si X&gt;0 devuelve X, si no, devuelve 0&quot;, así que lo que hace es pasar sólo valores 0 o mayores a la siguiente capa de la red. 
+* **Softmax** toma un conjunto de valores, y escoge el más grande. 
+</span><span class="s0">#%% md 
+ </span><span class="s1">**Pregunta 2.1 (2 puntos)**. Utilizando Keras, y preparando los datos de X e y como fuera necesario, define y entrena una red neuronal que sea capaz de clasificar imágenes de Fashion MNIST con las siguientes características: 
+ 
+* Una hidden layer de tamaños 128, utilizando unidades sigmoid 
+Optimizador Adam. 
+* Durante el entrenamiento, la red tiene que mostrar resultados de loss y accuracy por cada epoch. 
+* La red debe entrenar durante 10 epochs y batch size de 64. 
+* La última capa debe de ser una capa softmax. 
+* Tu red tendría que ser capaz de superar fácilmente 80% de accuracy. 
+</span><span class="s0">#%% 
+### Tu código para la red neuronal de la pregunta 2 aquí ###</span>
+
+<span class="s2">import </span><span class="s1">tensorflow </span><span class="s2">as </span><span class="s1">tf</span>
+<span class="s1">print(tf.__version__)</span>
+
+<span class="s1">mnist = tf.keras.datasets.fashion_mnist</span>
+<span class="s1">(training_images</span><span class="s2">, </span><span class="s1">training_labels) </span><span class="s2">,  </span><span class="s1">(test_images</span><span class="s2">, </span><span class="s1">test_labels) = mnist.load_data()</span>
+
+<span class="s1">training_images  = training_images / </span><span class="s3">255.0</span>
+<span class="s1">test_images = test_images / </span><span class="s3">255.0</span>
+
+<span class="s1">model = Sequential([</span>
+    <span class="s1">keras.layers.Flatten(input_shape=(</span><span class="s3">28</span><span class="s2">, </span><span class="s3">28</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">128</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'sigmoid'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">10</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'softmax'</span><span class="s1">)</span>
+<span class="s1">])</span>
+
+<span class="s1">model.compile(optimizer=</span><span class="s4">'adam'</span><span class="s2">,</span>
+              <span class="s1">loss=</span><span class="s4">'sparse_categorical_crossentropy'</span><span class="s2">,</span>
+              <span class="s1">metrics=[</span><span class="s4">'accuracy'</span><span class="s1">])</span>
+
+<span class="s1">model.fit(training_images</span><span class="s2">, </span><span class="s1">training_labels</span><span class="s2">, </span><span class="s1">epochs=</span><span class="s3">10</span><span class="s2">, </span><span class="s1">batch_size=</span><span class="s3">64</span><span class="s1">)</span>
+<span class="s0">#%% md 
+</span><span class="s1">Para concluir el entrenamiento de la red neuronal, una buena práctica es evaluar el modelo para ver si la precisión de entrenamiento es real 
+ 
+**pregunta 2.2 (0.5 puntos)**: Evalúa el modelo con las imágenes y etiquetas test. 
+</span><span class="s0">#%% 
+### Tu código para la evaluación de la red neuronal de la pregunta 2 aquí ###</span>
+<span class="s1">test_loss</span><span class="s2">, </span><span class="s1">test_acc = model.evaluate(test_images</span><span class="s2">, </span><span class="s1">test_labels)</span>
+<span class="s1">print(</span><span class="s4">'Test accuracy:'</span><span class="s2">, </span><span class="s1">test_acc)</span>
+
+<span class="s0">#%% md 
+</span>
+<span class="s1">## 3: Funcionamiento de las predicción de la red neuronal 
+ 
+ 
+</span><span class="s0">#%% md 
+</span><span class="s1">Ahora vamos a explorar el código con una serie de ejercicios para alcanzar un grado de comprensión mayor sobre las redes neuronales y su entrenamiento. 
+ 
+Sigue los siguientes pasos:  
+ 
+* Crea una variable llamada **classifications** para construir un clasificador con las imágenes de prueba, para ello puedes utilizar la función predict sobre el conjunto de test 
+* Imprime con la función print la primera entrada en las clasificaciones.  
+ 
+**pregunta 3.1 (0.25 puntos)**, el resultado al imprimirlo es un vector de números,  
+* ¿Por qué crees que ocurre esto? ¿Qué representa este vector de números? 
+ 
+**pregunta 3.2 (0.25 puntos)** 
+* ¿Cúal es la clase de la primera entrada de la variable **classifications**? La respuesta puede ser un número o su etiqueta/clase equivalente. 
+</span><span class="s0">#%% 
+### Tu código del clasificador de la pregunta 3 aquí ###</span>
+<span class="s1">classifications = model.predict(test_images)</span>
+<span class="s1">print(classifications[</span><span class="s3">0</span><span class="s1">])</span>
+<span class="s1">class_names = [</span><span class="s4">&quot;T-shirt/top&quot;</span><span class="s2">, </span><span class="s4">&quot;Trouser&quot;</span><span class="s2">, </span><span class="s4">&quot;Pullover&quot;</span><span class="s2">, </span><span class="s4">&quot;Dress&quot;</span><span class="s2">, </span><span class="s4">&quot;Coat&quot;</span><span class="s2">, </span><span class="s4">&quot;Sandal&quot;</span><span class="s2">, </span><span class="s4">&quot;Shirt&quot;</span><span class="s2">, </span><span class="s4">&quot;Sneaker&quot;</span><span class="s2">, </span><span class="s4">&quot;Bag&quot;</span><span class="s2">, </span><span class="s4">&quot;Ankle boot&quot;</span><span class="s1">]</span>
+<span class="s1">print(class_names[np.argmax(classifications[</span><span class="s3">0</span><span class="s1">])])</span>
+<span class="s0">#%% md 
+</span><span class="s1">Tu respuesta a la pregunta 3.1 aquí: 
+ 
+Como estamos construyendo un clasificador, el resultado es un vector de números que representan la probabilidad de que la imagen pertenezca a cada una de las clases. 
+ 
+</span><span class="s0">#%% md 
+</span><span class="s1">Tu respuesta a la pregunta 3.2 aquí: 
+ 
+En este caso en concreto, la primera imagen tiene una probabilidad del 92% de pertenecer a la clase 9 (ankle boot). 
+</span><span class="s0">#%% md 
+</span><span class="s1">## 4: Impacto variar el número de neuronas en las capas ocultas 
+ 
+ 
+ 
+ 
+</span><span class="s0">#%% md 
+</span><span class="s1">En este ejercicio vamos a experimentar con nuestra red neuronal cambiando el numero de neuronas por 512 y por 1024. Para ello, utiliza la red neuronal de la pregunta 1, y en su capa oculta cambia las 128 neuronas por: 
+ 
+* **512 neuronas en la capa oculta 
+* **1024 neuronas en la capa oculta 
+ 
+Entrena la red en ambos casos. 
+</span><span class="s0">#%% 
+### Tu código para 512 neuronas aquí ###</span>
+
+<span class="s2">import </span><span class="s1">tensorflow </span><span class="s2">as </span><span class="s1">tf</span>
+<span class="s1">print(tf.__version__)</span>
+
+<span class="s1">mnist = tf.keras.datasets.fashion_mnist</span>
+<span class="s1">(training_images</span><span class="s2">, </span><span class="s1">training_labels) </span><span class="s2">,  </span><span class="s1">(test_images</span><span class="s2">, </span><span class="s1">test_labels) = mnist.load_data()</span>
+<span class="s1">training_images  = training_images / </span><span class="s3">255.0</span>
+<span class="s1">test_images = test_images / </span><span class="s3">255.0</span>
+
+<span class="s1">model = Sequential([</span>
+    <span class="s1">keras.layers.Flatten(input_shape=(</span><span class="s3">28</span><span class="s2">, </span><span class="s3">28</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'sigmoid'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">10</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'softmax'</span><span class="s1">)</span>
+<span class="s1">])</span>
+
+<span class="s1">model.compile(optimizer=</span><span class="s4">'adam'</span><span class="s2">,</span>
+              <span class="s1">loss=</span><span class="s4">'sparse_categorical_crossentropy'</span><span class="s2">,</span>
+              <span class="s1">metrics=[</span><span class="s4">'accuracy'</span><span class="s1">])</span>
+
+<span class="s1">model.fit(training_images</span><span class="s2">, </span><span class="s1">training_labels</span><span class="s2">, </span><span class="s1">epochs=</span><span class="s3">10</span><span class="s2">, </span><span class="s1">batch_size=</span><span class="s3">64</span><span class="s1">)</span>
+<span class="s1">test_loss</span><span class="s2">, </span><span class="s1">test_acc = model.evaluate(test_images</span><span class="s2">, </span><span class="s1">test_labels)</span>
+<span class="s1">print(</span><span class="s4">'Test accuracy:'</span><span class="s2">, </span><span class="s1">test_acc)</span>
+<span class="s0">#%% 
+### Tu código para 1024 neuronas aquí ###</span>
+
+<span class="s2">import </span><span class="s1">tensorflow </span><span class="s2">as </span><span class="s1">tf</span>
+<span class="s1">print(tf.__version__)</span>
+
+<span class="s1">mnist = tf.keras.datasets.fashion_mnist</span>
+<span class="s1">(training_images</span><span class="s2">, </span><span class="s1">training_labels) </span><span class="s2">,  </span><span class="s1">(test_images</span><span class="s2">, </span><span class="s1">test_labels) = mnist.load_data()</span>
+<span class="s1">training_images  = training_images / </span><span class="s3">255.0</span>
+<span class="s1">test_images = test_images / </span><span class="s3">255.0</span>
+
+<span class="s1">model = Sequential([</span>
+    <span class="s1">keras.layers.Flatten(input_shape=(</span><span class="s3">28</span><span class="s2">, </span><span class="s3">28</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">1024</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'sigmoid'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">10</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'softmax'</span><span class="s1">)</span>
+<span class="s1">])</span>
+
+<span class="s1">model.compile(optimizer=</span><span class="s4">'adam'</span><span class="s2">,</span>
+              <span class="s1">loss=</span><span class="s4">'sparse_categorical_crossentropy'</span><span class="s2">,</span>
+              <span class="s1">metrics=[</span><span class="s4">'accuracy'</span><span class="s1">])</span>
+
+<span class="s1">model.fit(training_images</span><span class="s2">, </span><span class="s1">training_labels</span><span class="s2">, </span><span class="s1">epochs=</span><span class="s3">10</span><span class="s2">, </span><span class="s1">batch_size=</span><span class="s3">64</span><span class="s1">)</span>
+<span class="s1">test_loss</span><span class="s2">, </span><span class="s1">test_acc = model.evaluate(test_images</span><span class="s2">, </span><span class="s1">test_labels)</span>
+<span class="s1">print(</span><span class="s4">'Test accuracy:'</span><span class="s2">, </span><span class="s1">test_acc)</span>
+<span class="s0">#%% md 
+</span><span class="s1">**pregunta 4.1 (0.5 puntos)**: ¿Cuál es el impacto que tiene la red neuronal?  
+</span><span class="s0">#%% md 
+</span><span class="s1">#Tu respuesta a la pregunta 4.1 aquí: 
+El entrenamiento tarda mucho mas. Cuantas mas neuronas metemos en las hidden layers, mas tarda el 
+entrenamiento 
+En cuanto a los resultados: 
+Entrenamiento 128--&gt; loss: 0.2719 - accuracy: 0.9007 
+Test 128         --&gt; loss: 0.3345 - accuracy: 0.8786 
+Entrenamiento 512--&gt; loss: 0.2456 - accuracy: 0.9081 
+Test 512         --&gt; loss: 0.3245 - accuracy: 0.8825 
+Entrenamiento1024--&gt; loss: 0.2384 - accuracy: 0.9105 
+Test 1024        --&gt; loss: 0.3427 - accuracy: 0.8792 
+ 
+Podemos ver que el accuracy mejora (poco, pero mejora) en entrenamiento, pero al ver los datos de test, vemos que con 512 si mejora un poco, pero con 1024 baja con respecto al resultado con 512 neuronas. Esto es debido a que estamos haciendo overfitting, es decir, estamos entrenando demasiado la red y no estamos generalizando bien. 
+</span><span class="s0">#%% md 
+</span><span class="s1">Si ahora entrenais el modelo de esta forma (con 512 y 1024 neuronas en la capa oculta) y volveis a ejecutar el predictor guardado en la variable **classifications**, escribir el código del clasificador del ejercicio 1 de nuevo e imprimid el primer objeto guardado en la variable classifications. 
+ 
+**pregunta 4.2 (0.25 puntos)**:  
+ 
+* ¿En qué clase está clasificado ahora la primera prenda de vestir de la variable classifications? 
+ 
+**pregunta 4.3 (0.25 puntos)**:  
+ 
+* ¿Por qué crees que ha ocurrido esto? 
+</span><span class="s0">#%% 
+### Tu código del clasificador de la pregunta 4 aquí ###</span>
+
+<span class="s2">import </span><span class="s1">tensorflow </span><span class="s2">as </span><span class="s1">tf</span>
+<span class="s1">print(tf.__version__)</span>
+
+<span class="s1">mnist = tf.keras.datasets.fashion_mnist</span>
+<span class="s1">(training_images</span><span class="s2">, </span><span class="s1">training_labels) </span><span class="s2">,  </span><span class="s1">(test_images</span><span class="s2">, </span><span class="s1">test_labels) = mnist.load_data()</span>
+<span class="s1">training_images  = training_images / </span><span class="s3">255.0</span>
+<span class="s1">test_images = test_images / </span><span class="s3">255.0</span>
+
+<span class="s1">model = Sequential([</span>
+    <span class="s1">keras.layers.Flatten(input_shape=(</span><span class="s3">28</span><span class="s2">, </span><span class="s3">28</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'sigmoid'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">10</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'softmax'</span><span class="s1">)</span>
+<span class="s1">])</span>
+
+<span class="s1">model.compile(optimizer=</span><span class="s4">'adam'</span><span class="s2">,</span>
+              <span class="s1">loss=</span><span class="s4">'sparse_categorical_crossentropy'</span><span class="s2">,</span>
+              <span class="s1">metrics=[</span><span class="s4">'accuracy'</span><span class="s1">])</span>
+
+<span class="s1">model.fit(training_images</span><span class="s2">, </span><span class="s1">training_labels</span><span class="s2">, </span><span class="s1">epochs=</span><span class="s3">10</span><span class="s2">, </span><span class="s1">batch_size=</span><span class="s3">64</span><span class="s1">)</span>
+<span class="s1">test_loss</span><span class="s2">, </span><span class="s1">test_acc = model.evaluate(test_images</span><span class="s2">, </span><span class="s1">test_labels)</span>
+<span class="s1">classifications = model.predict(test_images)</span>
+<span class="s1">print(</span><span class="s4">&quot;con 512 predice: &quot; </span><span class="s1">+ class_names[np.argmax(classifications[</span><span class="s3">0</span><span class="s1">])])</span>
+<span class="s0">#%% 
+</span>
+<span class="s2">import </span><span class="s1">tensorflow </span><span class="s2">as </span><span class="s1">tf</span>
+<span class="s1">print(tf.__version__)</span>
+
+<span class="s1">mnist = tf.keras.datasets.fashion_mnist</span>
+<span class="s1">(training_images</span><span class="s2">, </span><span class="s1">training_labels) </span><span class="s2">,  </span><span class="s1">(test_images</span><span class="s2">, </span><span class="s1">test_labels) = mnist.load_data()</span>
+<span class="s1">training_images  = training_images / </span><span class="s3">255.0</span>
+<span class="s1">test_images = test_images / </span><span class="s3">255.0</span>
+
+<span class="s1">model = Sequential([</span>
+    <span class="s1">keras.layers.Flatten(input_shape=(</span><span class="s3">28</span><span class="s2">, </span><span class="s3">28</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">1024</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'sigmoid'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">10</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'softmax'</span><span class="s1">)</span>
+<span class="s1">])</span>
+
+<span class="s1">model.compile(optimizer=</span><span class="s4">'adam'</span><span class="s2">,</span>
+              <span class="s1">loss=</span><span class="s4">'sparse_categorical_crossentropy'</span><span class="s2">,</span>
+              <span class="s1">metrics=[</span><span class="s4">'accuracy'</span><span class="s1">])</span>
+
+<span class="s1">model.fit(training_images</span><span class="s2">, </span><span class="s1">training_labels</span><span class="s2">, </span><span class="s1">epochs=</span><span class="s3">10</span><span class="s2">, </span><span class="s1">batch_size=</span><span class="s3">64</span><span class="s1">)</span>
+<span class="s1">test_loss</span><span class="s2">, </span><span class="s1">test_acc = model.evaluate(test_images</span><span class="s2">, </span><span class="s1">test_labels)</span>
+<span class="s1">classifications = model.predict(test_images)</span>
+<span class="s1">print(</span><span class="s4">&quot;con 1024 predice: &quot; </span><span class="s1">+ class_names[np.argmax(classifications[</span><span class="s3">0</span><span class="s1">])])</span>
+<span class="s0">#%% md 
+</span><span class="s1">Tu respuesta a la pregunta 4.2 aquí: 
+ 
+Se sigue clasificando ankle boot en ambos casos. 
+</span><span class="s0">#%% md 
+</span><span class="s1">Tu respuesta a la pregunta 4.3 aquí: 
+ 
+Pues creo que es así porque realmente es una bota, y lo está prediciendo bien en todos los casos, con un poco mas de precisión en un modelo que en otro, pero en ambos casos el resultado es el mismo. 
+</span><span class="s0">#%% md 
+</span><span class="s1">## 5: Capa Flatten 
+ 
+ 
+ 
+</span><span class="s0">#%% md 
+</span><span class="s1">En este ejercicio vamos a ver que ocurre cuando quitamos la capa flatten, para ello, escribe la red neuronal de la pregunta 1 y no pongas la capa Flatten. 
+ 
+**pregunta 5 (0.5 puntos):** ¿Puedes explicar a qué se debe el error que da? 
+</span><span class="s0">#%% 
+### Tu código de la red neuronal sin capa flatten de la pregunta 6 aquí ###</span>
+
+<span class="s2">import </span><span class="s1">tensorflow </span><span class="s2">as </span><span class="s1">tf</span>
+<span class="s1">print(tf.__version__)</span>
+
+<span class="s1">mnist = tf.keras.datasets.fashion_mnist</span>
+<span class="s1">(training_images</span><span class="s2">, </span><span class="s1">training_labels) </span><span class="s2">,  </span><span class="s1">(test_images</span><span class="s2">, </span><span class="s1">test_labels) = mnist.load_data()</span>
+<span class="s1">training_images  = training_images / </span><span class="s3">255.0</span>
+<span class="s1">test_images = test_images / </span><span class="s3">255.0</span>
+
+<span class="s1">model = Sequential([</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">128</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'sigmoid'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">10</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'softmax'</span><span class="s1">)</span>
+<span class="s1">])</span>
+
+<span class="s1">model.compile(optimizer=</span><span class="s4">'adam'</span><span class="s2">,</span>
+              <span class="s1">loss=</span><span class="s4">'sparse_categorical_crossentropy'</span><span class="s2">,</span>
+              <span class="s1">metrics=[</span><span class="s4">'accuracy'</span><span class="s1">])</span>
+
+<span class="s1">model.fit(training_images</span><span class="s2">, </span><span class="s1">training_labels</span><span class="s2">, </span><span class="s1">epochs=</span><span class="s3">10</span><span class="s2">, </span><span class="s1">batch_size=</span><span class="s3">64</span><span class="s1">)</span>
+
+<span class="s0">#%% md 
+</span><span class="s1">Tu respuesta a la pregunta 5 aquí: 
+ 
+La capa flatten es la que convierte la imagen en un vector, &quot;aplana&quot; las matrices de 28x28 en un vector. Al eliminar la capa flatten, la red no sabe como interpretar la imagen, y por eso da error. 
+</span><span class="s0">#%% md 
+</span><span class="s1">## 6: Número de neuronas de la capa de salida 
+ 
+</span><span class="s0">#%% md 
+</span><span class="s1">Considerad la capa final, la de salida de la red neuronal de la pregunta 1. 
+ 
+**pregunta 6.1 (0.25 puntos)**: ¿Por qué son 10 las neuronas de la última capa? 
+ 
+**pregunta 6.2 (0.25 puntos)**: ¿Qué pasaría si tuvieras una cantidad diferente a 10?  
+ 
+Por ejemplo, intenta entrenar la red con 5, para ello utiliza la red neuronal de la pregunta 1 y cambia a 5 el número de neuronas en la última capa. 
+</span><span class="s0">#%% 
+### Tu código de la red neuronal con 5 neuronas en la capa de salida de la pregunta 7 aquí ###</span>
+
+<span class="s2">import </span><span class="s1">tensorflow </span><span class="s2">as </span><span class="s1">tf</span>
+<span class="s1">print(tf.__version__)</span>
+
+<span class="s1">mnist = tf.keras.datasets.fashion_mnist</span>
+<span class="s1">(training_images</span><span class="s2">, </span><span class="s1">training_labels) </span><span class="s2">,  </span><span class="s1">(test_images</span><span class="s2">, </span><span class="s1">test_labels) = mnist.load_data()</span>
+<span class="s1">training_images  = training_images / </span><span class="s3">255.0</span>
+<span class="s1">test_images = test_images / </span><span class="s3">255.0</span>
+
+<span class="s1">model = Sequential([</span>
+    <span class="s1">keras.layers.Flatten(input_shape=(</span><span class="s3">28</span><span class="s2">, </span><span class="s3">28</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">128</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'sigmoid'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">5</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'softmax'</span><span class="s1">)</span>
+<span class="s1">])</span>
+
+<span class="s1">model.compile(optimizer=</span><span class="s4">'adam'</span><span class="s2">,</span>
+              <span class="s1">loss=</span><span class="s4">'sparse_categorical_crossentropy'</span><span class="s2">,</span>
+              <span class="s1">metrics=[</span><span class="s4">'accuracy'</span><span class="s1">])</span>
+
+<span class="s1">model.fit(training_images</span><span class="s2">, </span><span class="s1">training_labels</span><span class="s2">, </span><span class="s1">epochs=</span><span class="s3">10</span><span class="s2">, </span><span class="s1">batch_size=</span><span class="s3">64</span><span class="s1">)</span>
+
+<span class="s0">#%% md 
+</span><span class="s1">Tu respuestas a la pregunta 6.1 aquí: 
+ 
+Como estamos haciendo un clasificador, hay 10 neuronas en la capa de salida porque hay 10 clases de ropa, y cada neurona representa una clase. 
+</span><span class="s0">#%% md 
+</span><span class="s1">Tu respuestas a la pregunta 6.2 aquí: 
+ 
+Da un error, que en este caso, es bastante explícito: 
+```Received a label value of 9 which is outside the valid range of [0, 5).``` 
+Está recibiendo valores fuera del rango que estamos definiendo en la capa de salida. 
+ 
+En el caso de meter más de 10 neuronas en la red, no daría error, pero perdería capacidad de clasificación, ya que no tendría en cuenta las clases que no entrarían jamás. 
+</span><span class="s0">#%% md 
+</span><span class="s1">## 7: Aumento de epoch y su efecto en la red neuronal 
+ 
+</span><span class="s0">#%% md 
+</span><span class="s1">En este ejercicio vamos a ver el impacto de aumentar los epoch en el entrenamiento. Usando la red neuronal de la pregunta 1: 
+ 
+**pregunta 7.1 (0.15 puntos)** 
+* Intentad 15 epoch para su entrenamiento, probablemente obtendras un modelo con una pérdida mucho mejor que el que tiene 5. 
+ 
+**pregunta 7.2 (0.15 puntos)** 
+* Intenta ahora con 30 epoch para su entrenamiento, podrás ver que el valor de la pérdida deja de disminuir, y a veces aumenta. 
+ 
+**pregunta 7.3 (0.20 puntos)** 
+* ¿Por qué piensas que ocurre esto? Explica tu respuesta y da el nombre de este efecto si lo conoces. 
+</span><span class="s0">#%% 
+### Tu código para 15 epoch aquí ###</span>
+
+<span class="s2">import </span><span class="s1">tensorflow </span><span class="s2">as </span><span class="s1">tf</span>
+<span class="s1">print(tf.__version__)</span>
+
+<span class="s1">mnist = tf.keras.datasets.fashion_mnist</span>
+<span class="s1">(training_images</span><span class="s2">, </span><span class="s1">training_labels) </span><span class="s2">,  </span><span class="s1">(test_images</span><span class="s2">, </span><span class="s1">test_labels) = mnist.load_data()</span>
+<span class="s1">training_images  = training_images / </span><span class="s3">255.0</span>
+<span class="s1">test_images = test_images / </span><span class="s3">255.0</span>
+
+<span class="s1">model = Sequential([</span>
+    <span class="s1">keras.layers.Flatten(input_shape=(</span><span class="s3">28</span><span class="s2">, </span><span class="s3">28</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">128</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'sigmoid'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">10</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'softmax'</span><span class="s1">)</span>
+<span class="s1">])</span>
+
+<span class="s1">model.compile(optimizer=</span><span class="s4">'adam'</span><span class="s2">,</span>
+              <span class="s1">loss=</span><span class="s4">'sparse_categorical_crossentropy'</span><span class="s2">,</span>
+              <span class="s1">metrics=[</span><span class="s4">'accuracy'</span><span class="s1">])</span>
+
+<span class="s1">model.fit(training_images</span><span class="s2">, </span><span class="s1">training_labels</span><span class="s2">, </span><span class="s1">epochs=</span><span class="s3">15</span><span class="s2">, </span><span class="s1">batch_size=</span><span class="s3">64</span><span class="s1">)</span>
+<span class="s0">#%% 
+### Tu código para 30 epoch aquí ###</span>
+
+<span class="s2">import </span><span class="s1">tensorflow </span><span class="s2">as </span><span class="s1">tf</span>
+<span class="s1">print(tf.__version__)</span>
+
+<span class="s1">mnist = tf.keras.datasets.fashion_mnist</span>
+<span class="s1">(training_images</span><span class="s2">, </span><span class="s1">training_labels) </span><span class="s2">,  </span><span class="s1">(test_images</span><span class="s2">, </span><span class="s1">test_labels) = mnist.load_data()</span>
+
+<span class="s1">training_images = training_images/</span><span class="s3">255.0</span>
+<span class="s1">test_images = test_images/</span><span class="s3">255.0</span>
+
+<span class="s1">model = Sequential([</span>
+    <span class="s1">keras.layers.Flatten(input_shape=(</span><span class="s3">28</span><span class="s2">, </span><span class="s3">28</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">128</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'sigmoid'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">10</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'softmax'</span><span class="s1">)</span>
+<span class="s1">])</span>
+
+<span class="s1">model.compile(optimizer=</span><span class="s4">'adam'</span><span class="s2">,</span>
+              <span class="s1">loss=</span><span class="s4">'sparse_categorical_crossentropy'</span><span class="s2">,</span>
+              <span class="s1">metrics=[</span><span class="s4">'accuracy'</span><span class="s1">])</span>
+
+<span class="s1">model.fit(training_images</span><span class="s2">, </span><span class="s1">training_labels</span><span class="s2">, </span><span class="s1">epochs=</span><span class="s3">40</span><span class="s2">, </span><span class="s1">batch_size=</span><span class="s3">64</span><span class="s1">)</span>
+<span class="s0">#%% md 
+</span><span class="s1">Tu respuesta a la pregunta 7.3 aquí: 
+ 
+He ampliado de 30 a 40 epoch, para que se viera mejor, porque con 30 no lo apreciaba del todo. 
+Llega un punto en el que el accuracy cada vez crece mas despacio, llegando a decrecer en algunos epoch. 
+Esto se puede producir por dos factores: 
+Por un lado puede deberse a overfitting. El modelo se adapta demasiado a los datos de entrenamiento, no siendo capáz de generalizar bien. 
+Puede ser debido también a vanishing gradients: al usar la función de activación sigmoid, los gradientes se van haciendo cada vez mas pequeños, y al final, el modelo no es capáz de aprender nada. 
+</span><span class="s0">#%% md 
+</span><span class="s1">## 8: Early stop 
+ 
+</span><span class="s0">#%% md 
+</span><span class="s1">En el ejercicio anterior, cuando entrenabas con epoch extras, tenías un problema en el que tu pérdida podía cambiar. Puede que te haya llevado un poco de tiempo esperar a que el entrenamiento lo hiciera,  y puede que hayas pensado &quot;¿no estaría bien si pudiera parar el entrenamiento cuando alcance un valor deseado?&quot;, es decir, una precisión del 85% podría ser suficiente para ti, y si alcanzas eso después de 3 epoch, ¿por qué sentarte a esperar a que termine muchas más épocas? Como cualquier otro programa existen formas de parar la ejecución 
+ 
+A partir del código de ejemplo, hacer una nueva función que tenga en cuenta la perdida (loss) y que pueda parar el código para evitar que ocurra el efecto secundario que vimos en el ejercicio 5. 
+</span><span class="s0">#%% 
+### Ejemplo de código</span>
+
+<span class="s2">class </span><span class="s1">myCallback(tf.keras.callbacks.Callback):</span>
+      <span class="s2">def </span><span class="s1">on_epoch_end(self</span><span class="s2">, </span><span class="s1">epoch</span><span class="s2">, </span><span class="s1">logs={}):</span>
+        <span class="s2">if</span><span class="s1">(logs.get(</span><span class="s4">'accuracy'</span><span class="s1">)&gt; </span><span class="s3">0.85</span><span class="s1">):</span>
+              <span class="s1">print(</span><span class="s4">&quot;</span><span class="s2">\n</span><span class="s4">Alcanzado el 85% de precisión, se cancela el entrenamiento!!&quot;</span><span class="s1">)</span>
+              <span class="s1">self.model.stop_training = </span><span class="s2">True</span>
+<span class="s0">#%% md 
+</span><span class="s1">**Ejercicio 8 *(0.75 puntos)***: Completa el siguiente código con una clase callback que una vez alcanzado el 40% de perdida detenga el entrenamiento. 
+</span><span class="s0">#%% 
+</span><span class="s2">import </span><span class="s1">tensorflow </span><span class="s2">as </span><span class="s1">tf</span>
+<span class="s1">print(tf.__version__)</span>
+
+<span class="s0">### Tu código de la función callback para parar el entrenamiento de la red neuronal al 40% de loss aqui: ###</span>
+
+<span class="s2">class </span><span class="s1">myCallback(tf.keras.callbacks.Callback):</span>
+    <span class="s2">def </span><span class="s1">on_epoch_end(self</span><span class="s2">, </span><span class="s1">epoch</span><span class="s2">, </span><span class="s1">logs={}):</span>
+        <span class="s2">if</span><span class="s1">(logs.get(</span><span class="s4">'loss'</span><span class="s1">)&lt; </span><span class="s3">0.40</span><span class="s1">):</span>
+            <span class="s1">print(</span><span class="s4">&quot;</span><span class="s2">\n</span><span class="s4">Alcanzada una pérdida inferior al 40%, se cancela el entrenamiento!!&quot;</span><span class="s1">)</span>
+            <span class="s1">self.model.stop_training = </span><span class="s2">True</span>
+
+<span class="s1">callbacks = myCallback()</span>
+<span class="s1">mnist = tf.keras.datasets.fashion_mnist</span>
+<span class="s1">(training_images</span><span class="s2">, </span><span class="s1">training_labels) </span><span class="s2">,  </span><span class="s1">(test_images</span><span class="s2">, </span><span class="s1">test_labels) = mnist.load_data()</span>
+
+<span class="s1">training_images = training_images/</span><span class="s3">255.0</span>
+<span class="s1">test_images = test_images/</span><span class="s3">255.0</span>
+
+<span class="s1">model = tf.keras.models.Sequential([tf.keras.layers.Flatten()</span><span class="s2">,</span>
+                                    <span class="s1">tf.keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=tf.nn.relu)</span><span class="s2">,</span>
+                                    <span class="s1">tf.keras.layers.Dense(</span><span class="s3">10</span><span class="s2">, </span><span class="s1">activation=tf.nn.softmax)])</span>
+
+<span class="s1">model.compile(optimizer = </span><span class="s4">'adam'</span><span class="s2">,</span>
+              <span class="s1">loss = </span><span class="s4">'sparse_categorical_crossentropy'</span><span class="s2">,</span>
+              <span class="s1">metrics=[</span><span class="s4">'accuracy'</span><span class="s1">]) </span>
+
+<span class="s1">model.fit(training_images</span><span class="s2">, </span><span class="s1">training_labels</span><span class="s2">, </span><span class="s1">epochs=</span><span class="s3">50</span><span class="s2">, </span><span class="s1">callbacks=[callbacks])</span>
+<span class="s0">#%% md 
+</span><span class="s1">## 9. Unidades de activación 
+</span><span class="s0">#%% md 
+</span><span class="s1">En este ejercicio, vamos a evaluar la importancia de utilizar las unidades de activación adecuadas. Como hemos visto en clase, funciones de activación como sigmoid han dejado de utilizarse en favor de otras unidades como ReLU. 
+ 
+**Ejercicio 9 *(0.75 puntos)***: Partiendo de una red sencilla como la desarrollada en el Trabajo 1, escribir un breve análisis comparando la utilización de unidades sigmoid y ReLU (por ejemplo, se pueden comentar aspectos como velocidad de convergencia, métricas obtenidas...). Explicar por qué pueden darse estas diferencias. Opcionalmente, comparar con otras activaciones disponibles en Keras. 
+ 
+*Pista: Usando redes más grandes se hace más sencillo apreciar las diferencias. Es mejor utilizar al menos 3 o 4 capas densas.* 
+</span><span class="s0">#%% 
+## Ejemplo con sigmoide, 5 capas densas de 512 neuronas cada una</span>
+
+
+<span class="s2">import </span><span class="s1">tensorflow </span><span class="s2">as </span><span class="s1">tf</span>
+<span class="s1">print(tf.__version__)</span>
+
+<span class="s1">mnist = tf.keras.datasets.fashion_mnist</span>
+<span class="s1">(training_images</span><span class="s2">, </span><span class="s1">training_labels) </span><span class="s2">,  </span><span class="s1">(test_images</span><span class="s2">, </span><span class="s1">test_labels) = mnist.load_data()</span>
+<span class="s1">training_images  = training_images / </span><span class="s3">255.0</span>
+<span class="s1">test_images = test_images / </span><span class="s3">255.0</span>
+
+<span class="s1">model = Sequential([</span>
+    <span class="s1">keras.layers.Flatten(input_shape=(</span><span class="s3">28</span><span class="s2">, </span><span class="s3">28</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'sigmoid'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'sigmoid'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'sigmoid'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'sigmoid'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'sigmoid'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">10</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'softmax'</span><span class="s1">)</span>
+<span class="s1">])</span>
+
+<span class="s1">model.compile(optimizer=</span><span class="s4">'adam'</span><span class="s2">,</span>
+              <span class="s1">loss=</span><span class="s4">'sparse_categorical_crossentropy'</span><span class="s2">,</span>
+              <span class="s1">metrics=[</span><span class="s4">'accuracy'</span><span class="s1">])</span>
+
+<span class="s1">model.fit(training_images</span><span class="s2">, </span><span class="s1">training_labels</span><span class="s2">, </span><span class="s1">epochs=</span><span class="s3">10</span><span class="s2">, </span><span class="s1">batch_size=</span><span class="s3">64</span><span class="s1">)</span>
+<span class="s1">test_loss</span><span class="s2">, </span><span class="s1">test_acc = model.evaluate(test_images</span><span class="s2">, </span><span class="s1">test_labels)</span>
+<span class="s1">print(</span><span class="s4">'Test accuracy:'</span><span class="s2">, </span><span class="s1">test_acc)</span>
+<span class="s0">#%% 
+## Ejemplo con ReLU, 5 capas densas de 512 neuronas cada una</span>
+
+
+<span class="s2">import </span><span class="s1">tensorflow </span><span class="s2">as </span><span class="s1">tf</span>
+<span class="s1">print(tf.__version__)</span>
+
+<span class="s1">mnist = tf.keras.datasets.fashion_mnist</span>
+<span class="s1">(training_images</span><span class="s2">, </span><span class="s1">training_labels) </span><span class="s2">,  </span><span class="s1">(test_images</span><span class="s2">, </span><span class="s1">test_labels) = mnist.load_data()</span>
+<span class="s1">training_images  = training_images / </span><span class="s3">255.0</span>
+<span class="s1">test_images = test_images / </span><span class="s3">255.0</span>
+
+<span class="s1">model = Sequential([</span>
+    <span class="s1">keras.layers.Flatten(input_shape=(</span><span class="s3">28</span><span class="s2">, </span><span class="s3">28</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">10</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'softmax'</span><span class="s1">)</span>
+<span class="s1">])</span>
+
+<span class="s1">model.compile(optimizer=</span><span class="s4">'adam'</span><span class="s2">,</span>
+              <span class="s1">loss=</span><span class="s4">'sparse_categorical_crossentropy'</span><span class="s2">,</span>
+              <span class="s1">metrics=[</span><span class="s4">'accuracy'</span><span class="s1">])</span>
+
+<span class="s1">model.fit(training_images</span><span class="s2">, </span><span class="s1">training_labels</span><span class="s2">, </span><span class="s1">epochs=</span><span class="s3">10</span><span class="s2">, </span><span class="s1">batch_size=</span><span class="s3">64</span><span class="s1">)</span>
+<span class="s1">test_loss</span><span class="s2">, </span><span class="s1">test_acc = model.evaluate(test_images</span><span class="s2">, </span><span class="s1">test_labels)</span>
+<span class="s1">print(</span><span class="s4">'Test accuracy:'</span><span class="s2">, </span><span class="s1">test_acc)</span>
+<span class="s0">#%% 
+## Ejemplo con LeakyReLU, 5 capas densas de 512 neuronas cada una</span>
+
+
+<span class="s2">import </span><span class="s1">tensorflow </span><span class="s2">as </span><span class="s1">tf</span>
+<span class="s1">print(tf.__version__)</span>
+
+<span class="s1">mnist = tf.keras.datasets.fashion_mnist</span>
+<span class="s1">(training_images</span><span class="s2">, </span><span class="s1">training_labels) </span><span class="s2">,  </span><span class="s1">(test_images</span><span class="s2">, </span><span class="s1">test_labels) = mnist.load_data()</span>
+<span class="s1">training_images  = training_images / </span><span class="s3">255.0</span>
+<span class="s1">test_images = test_images / </span><span class="s3">255.0</span>
+
+<span class="s1">model = Sequential([</span>
+    <span class="s1">keras.layers.Flatten(input_shape=(</span><span class="s3">28</span><span class="s2">, </span><span class="s3">28</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=tf.keras.layers.LeakyReLU(</span><span class="s3">0.1</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=tf.keras.layers.LeakyReLU(</span><span class="s3">0.1</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=tf.keras.layers.LeakyReLU(</span><span class="s3">0.1</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=tf.keras.layers.LeakyReLU(</span><span class="s3">0.1</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=tf.keras.layers.LeakyReLU(</span><span class="s3">0.1</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">10</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'softmax'</span><span class="s1">)</span>
+<span class="s1">])</span>
+
+<span class="s1">model.compile(optimizer=</span><span class="s4">'adam'</span><span class="s2">,</span>
+              <span class="s1">loss=</span><span class="s4">'sparse_categorical_crossentropy'</span><span class="s2">,</span>
+              <span class="s1">metrics=[</span><span class="s4">'accuracy'</span><span class="s1">])</span>
+
+<span class="s1">model.fit(training_images</span><span class="s2">, </span><span class="s1">training_labels</span><span class="s2">, </span><span class="s1">epochs=</span><span class="s3">10</span><span class="s2">, </span><span class="s1">batch_size=</span><span class="s3">64</span><span class="s1">)</span>
+<span class="s1">test_loss</span><span class="s2">, </span><span class="s1">test_acc = model.evaluate(test_images</span><span class="s2">, </span><span class="s1">test_labels)</span>
+<span class="s1">print(</span><span class="s4">'Test accuracy:'</span><span class="s2">, </span><span class="s1">test_acc)</span>
+
+<span class="s0">#%% md 
+</span><span class="s1">### Resultado de los distintos entrenamientos 
+ 
+| epoch | s tiempo | s accuracy | r tiempo | r accuracy | lr tiempo | lr accuracy | 
+|------|----------|------------|----------|------------|-----------|-------------| 
+| 1    | 15       | 68         | 14       | 81         | 15        | 81          | 
+| 2    | 14       | 83         | 13       | 86         | 14        | 85          | 
+| 3    | 16       | 85         | 14       | 87         | 14        | 87          | 
+| 4    | 14       | 87         | 16       | 88         | 17        | 88          | 
+| 5    | 13       | 88         | 16       | 89         | 14        | 88          | 
+| 6    | 13       | 88         | 13       | 89         | 11        | 89          | 
+| 7    | 14       | 88         | 13       | 90         | 11        | 89          | 
+| 8    | 13       | 89         | 15       | 90         | 10        | 89          | 
+| 9    | 15       | 89         | 15       | 90         | 10        | 90          | 
+| 10   | 15       | 90         | 17       | 91         | 11        | 90          | 
+| test | -        | 87,9%      | -        | 88,1%      | -         | 86,7%       | 
+ 
+En cuanto a la velocidad de convergencia, se observa que la red neuronal con unidades ReLU y LeakyReLU converge más rápido que la red con unidades sigmoid. Esto se debe a que las unidades sigmoid tienen un rango de salida limitado y experimentan saturación en la región de valores extremos, lo que puede afectar la velocidad de convergencia. 
+ 
+En cuanto a las métricas obtenidas, se observa que la precisión de la red neuronal con unidades ReLU  es mayor que la red con unidades sigmoid y LeakyReLU en el conjunto de prueba. Esto puede deberse a que las unidades ReLU y LeakyReLU tienen una mejor capacidad para representar patrones complejos en los datos. 
+</span><span class="s0">#%% md 
+</span><span class="s1">## 10. Inicialización de parámetros 
+</span><span class="s0">#%% md 
+</span><span class="s1">En este ejercicio, vamos a evaluar la importancia de una correcta inicialización de parámetros en una red neuronal. 
+ 
+**Ejercicio 10 *(0.75 puntos)***: Partiendo de una red similar a la del ejercicio anterior (usando ya ReLUs), comentar las diferencias que se aprecian en el entrenamiento al utilizar distintas estrategias de inicialización de parámetros. Para ello, inicializar todas las capas con las siguientes estrategias, disponibles en Keras, y analizar sus diferencias: 
+ 
+* Inicialización con ceros. 
+* Inicialización con una variable aleatoria normal. 
+* Inicialización con los valores por defecto de Keras para una capa Dense (estrategia *glorot uniform*) 
+</span><span class="s0">#%% 
+## Inicializando con ceros</span>
+
+<span class="s2">import </span><span class="s1">tensorflow </span><span class="s2">as </span><span class="s1">tf</span>
+<span class="s1">print(tf.__version__)</span>
+
+<span class="s1">mnist = tf.keras.datasets.fashion_mnist</span>
+<span class="s1">(training_images</span><span class="s2">, </span><span class="s1">training_labels) </span><span class="s2">,  </span><span class="s1">(test_images</span><span class="s2">, </span><span class="s1">test_labels) = mnist.load_data()</span>
+<span class="s1">training_images  = training_images / </span><span class="s3">255.0</span>
+<span class="s1">test_images = test_images / </span><span class="s3">255.0</span>
+
+<span class="s1">model = Sequential([</span>
+    <span class="s1">keras.layers.Flatten(input_shape=(</span><span class="s3">28</span><span class="s2">, </span><span class="s3">28</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'zeros'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'zeros'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'zeros'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'zeros'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'zeros'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">10</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'softmax'</span><span class="s1">)</span>
+<span class="s1">])</span>
+
+<span class="s1">model.compile(optimizer=</span><span class="s4">'adam'</span><span class="s2">,</span>
+              <span class="s1">loss=</span><span class="s4">'sparse_categorical_crossentropy'</span><span class="s2">,</span>
+              <span class="s1">metrics=[</span><span class="s4">'accuracy'</span><span class="s1">])</span>
+
+<span class="s1">model.fit(training_images</span><span class="s2">, </span><span class="s1">training_labels</span><span class="s2">, </span><span class="s1">epochs=</span><span class="s3">10</span><span class="s2">, </span><span class="s1">batch_size=</span><span class="s3">64</span><span class="s1">)</span>
+<span class="s1">test_loss</span><span class="s2">, </span><span class="s1">test_acc = model.evaluate(test_images</span><span class="s2">, </span><span class="s1">test_labels)</span>
+<span class="s1">print(</span><span class="s4">'Test accuracy:'</span><span class="s2">, </span><span class="s1">test_acc)</span>
+<span class="s0">#%% 
+## Inicializando con una variable aleatoria normal</span>
+
+<span class="s2">import </span><span class="s1">tensorflow </span><span class="s2">as </span><span class="s1">tf</span>
+<span class="s1">print(tf.__version__)</span>
+
+<span class="s1">mnist = tf.keras.datasets.fashion_mnist</span>
+<span class="s1">(training_images</span><span class="s2">, </span><span class="s1">training_labels) </span><span class="s2">,  </span><span class="s1">(test_images</span><span class="s2">, </span><span class="s1">test_labels) = mnist.load_data()</span>
+<span class="s1">training_images  = training_images / </span><span class="s3">255.0</span>
+<span class="s1">test_images = test_images / </span><span class="s3">255.0</span>
+
+<span class="s1">model = Sequential([</span>
+    <span class="s1">keras.layers.Flatten(input_shape=(</span><span class="s3">28</span><span class="s2">, </span><span class="s3">28</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'random_normal'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'random_normal'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'random_normal'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'random_normal'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'random_normal'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">10</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'softmax'</span><span class="s1">)</span>
+<span class="s1">])</span>
+
+<span class="s1">model.compile(optimizer=</span><span class="s4">'adam'</span><span class="s2">,</span>
+              <span class="s1">loss=</span><span class="s4">'sparse_categorical_crossentropy'</span><span class="s2">,</span>
+              <span class="s1">metrics=[</span><span class="s4">'accuracy'</span><span class="s1">])</span>
+
+<span class="s1">model.fit(training_images</span><span class="s2">, </span><span class="s1">training_labels</span><span class="s2">, </span><span class="s1">epochs=</span><span class="s3">10</span><span class="s2">, </span><span class="s1">batch_size=</span><span class="s3">64</span><span class="s1">)</span>
+<span class="s1">test_loss</span><span class="s2">, </span><span class="s1">test_acc = model.evaluate(test_images</span><span class="s2">, </span><span class="s1">test_labels)</span>
+<span class="s1">print(</span><span class="s4">'Test accuracy:'</span><span class="s2">, </span><span class="s1">test_acc)</span>
+<span class="s0">#%% 
+## Inicializando con los valores por defecto de Keras para una capa Dense (estrategia glorot uniform)</span>
+
+<span class="s2">import </span><span class="s1">tensorflow </span><span class="s2">as </span><span class="s1">tf</span>
+<span class="s1">print(tf.__version__)</span>
+
+<span class="s1">mnist = tf.keras.datasets.fashion_mnist</span>
+<span class="s1">(training_images</span><span class="s2">, </span><span class="s1">training_labels) </span><span class="s2">,  </span><span class="s1">(test_images</span><span class="s2">, </span><span class="s1">test_labels) = mnist.load_data()</span>
+<span class="s1">training_images  = training_images / </span><span class="s3">255.0</span>
+<span class="s1">test_images = test_images / </span><span class="s3">255.0</span>
+
+<span class="s1">model = Sequential([</span>
+    <span class="s1">keras.layers.Flatten(input_shape=(</span><span class="s3">28</span><span class="s2">, </span><span class="s3">28</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'glorot_uniform'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'glorot_uniform'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'glorot_uniform'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'glorot_uniform'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'glorot_uniform'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">10</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'softmax'</span><span class="s1">)</span>
+<span class="s1">])</span>
+
+<span class="s1">model.compile(optimizer=</span><span class="s4">'adam'</span><span class="s2">,</span>
+              <span class="s1">loss=</span><span class="s4">'sparse_categorical_crossentropy'</span><span class="s2">,</span>
+              <span class="s1">metrics=[</span><span class="s4">'accuracy'</span><span class="s1">])</span>
+
+<span class="s1">model.fit(training_images</span><span class="s2">, </span><span class="s1">training_labels</span><span class="s2">, </span><span class="s1">epochs=</span><span class="s3">10</span><span class="s2">, </span><span class="s1">batch_size=</span><span class="s3">64</span><span class="s1">)</span>
+<span class="s1">test_loss</span><span class="s2">, </span><span class="s1">test_acc = model.evaluate(test_images</span><span class="s2">, </span><span class="s1">test_labels)</span>
+<span class="s1">print(</span><span class="s4">'Test accuracy:'</span><span class="s2">, </span><span class="s1">test_acc)</span>
+<span class="s0">#%% md 
+</span><span class="s1">## Respuesta 
+ 
+Resultados obtenidos: 
+Inicializando con ceros 
+* Training accuracy: 8% 
+* Test accuracy: 10% 
+ 
+Inicializando con una variable aleatoria normal 
+* Training accuracy: 90% 
+* Test accuracy: 88% 
+ 
+Inicializando con los valores por defecto de Keras para una capa Dense (estrategia glorot uniform) 
+* Training accuracy: 90% 
+* Test accuracy: 88% 
+ 
+De aquí podemos ver que la inicialización con ceros no es una buena estrategia, ya que no se consigue un buen accuracy. En cambio, inicializando con una variable aleatoria normal o con los valores por defecto de Keras para una capa Dense (estrategia glorot uniform) se consigue un buen accuracy, ya que se consigue un accuracy de 90% en el training set y de 88% en el test set. 
+ 
+En la primera instancia, al inicializar el kernel con &quot;kernel_initializer='zeros'&quot;, se establecen todos los pesos en cero, lo que implica que todas las neuronas de la red generan la misma salida. Esto causa una falta de diversidad en la información que fluye a través de la red, y el modelo es incapaz de aprender patrones complejos en los datos. 
+ 
+ 
+</span><span class="s0">#%% md 
+</span><span class="s1">## 11. Optimizadores 
+</span><span class="s0">#%% md 
+</span><span class="s1">**Ejercicio 11 *(0.75 puntos)***: Partiendo de una red similar a la del ejercicio anterior (utilizando la mejor estrategia de inicialización observada), comparar y analizar las diferencias que se observan  al entrenar con varios de los optimizadores vistos en clase, incluyendo SGD como optimizador básico (se puede explorar el espacio de hiperparámetros de cada optimizador, aunque para optimizadores más avanzados del estilo de adam y RMSprop es buena idea dejar los valores por defecto provistos por Keras). 
+</span><span class="s0">#%% 
+## Prueba con SGD</span>
+
+<span class="s2">import </span><span class="s1">tensorflow </span><span class="s2">as </span><span class="s1">tf</span>
+<span class="s1">print(tf.__version__)</span>
+
+<span class="s1">mnist = tf.keras.datasets.fashion_mnist</span>
+<span class="s1">(training_images</span><span class="s2">, </span><span class="s1">training_labels) </span><span class="s2">,  </span><span class="s1">(test_images</span><span class="s2">, </span><span class="s1">test_labels) = mnist.load_data()</span>
+<span class="s1">training_images  = training_images / </span><span class="s3">255.0</span>
+<span class="s1">test_images = test_images / </span><span class="s3">255.0</span>
+
+<span class="s1">model = Sequential([</span>
+    <span class="s1">keras.layers.Flatten(input_shape=(</span><span class="s3">28</span><span class="s2">, </span><span class="s3">28</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'random_normal'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'random_normal'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'random_normal'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'random_normal'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'random_normal'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">10</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'softmax'</span><span class="s1">)</span>
+<span class="s1">])</span>
+
+<span class="s1">model.compile(optimizer=</span><span class="s4">'SGD'</span><span class="s2">,</span>
+              <span class="s1">loss=</span><span class="s4">'sparse_categorical_crossentropy'</span><span class="s2">,</span>
+              <span class="s1">metrics=[</span><span class="s4">'accuracy'</span><span class="s1">])</span>
+
+<span class="s1">model.fit(training_images</span><span class="s2">, </span><span class="s1">training_labels</span><span class="s2">, </span><span class="s1">epochs=</span><span class="s3">10</span><span class="s2">, </span><span class="s1">batch_size=</span><span class="s3">64</span><span class="s1">)</span>
+<span class="s1">test_loss</span><span class="s2">, </span><span class="s1">test_acc = model.evaluate(test_images</span><span class="s2">, </span><span class="s1">test_labels)</span>
+<span class="s1">print(</span><span class="s4">'Test accuracy:'</span><span class="s2">, </span><span class="s1">test_acc)</span>
+<span class="s0">#%% 
+## Prueba con SGD con fine tuning</span>
+
+<span class="s2">import </span><span class="s1">tensorflow </span><span class="s2">as </span><span class="s1">tf</span>
+
+<span class="s1">print(tf.__version__)</span>
+
+<span class="s1">mnist = tf.keras.datasets.fashion_mnist</span>
+<span class="s1">(training_images</span><span class="s2">, </span><span class="s1">training_labels)</span><span class="s2">, </span><span class="s1">(test_images</span><span class="s2">, </span><span class="s1">test_labels) = mnist.load_data()</span>
+<span class="s1">training_images = training_images / </span><span class="s3">255.0</span>
+<span class="s1">test_images = test_images / </span><span class="s3">255.0</span>
+
+<span class="s1">opt = tf.keras.optimizers.experimental.SGD(learning_rate=</span><span class="s3">0.01</span><span class="s2">, </span><span class="s1">momentum=</span><span class="s3">0.9</span><span class="s2">, </span><span class="s1">nesterov=</span><span class="s2">True</span><span class="s1">)</span>
+
+<span class="s1">model = Sequential([</span>
+    <span class="s1">keras.layers.Flatten(input_shape=(</span><span class="s3">28</span><span class="s2">, </span><span class="s3">28</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'random_normal'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'random_normal'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'random_normal'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'random_normal'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'random_normal'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">10</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'softmax'</span><span class="s1">)</span>
+<span class="s1">])</span>
+
+<span class="s1">model.compile(optimizer=opt</span><span class="s2">,</span>
+              <span class="s1">loss=</span><span class="s4">'sparse_categorical_crossentropy'</span><span class="s2">,</span>
+              <span class="s1">metrics=[</span><span class="s4">'accuracy'</span><span class="s1">]</span>
+              <span class="s1">)</span>
+
+<span class="s1">model.fit(training_images</span><span class="s2">, </span><span class="s1">training_labels</span><span class="s2">, </span><span class="s1">epochs=</span><span class="s3">10</span><span class="s2">, </span><span class="s1">batch_size=</span><span class="s3">64</span><span class="s1">)</span>
+<span class="s1">test_loss</span><span class="s2">, </span><span class="s1">test_acc = model.evaluate(test_images</span><span class="s2">, </span><span class="s1">test_labels)</span>
+<span class="s1">print(</span><span class="s4">'Test accuracy:'</span><span class="s2">, </span><span class="s1">test_acc)</span>
+
+<span class="s0">#%% 
+# Prueba con Adam</span>
+
+<span class="s2">import </span><span class="s1">tensorflow </span><span class="s2">as </span><span class="s1">tf</span>
+<span class="s1">print(tf.__version__)</span>
+
+<span class="s1">mnist = tf.keras.datasets.fashion_mnist</span>
+<span class="s1">(training_images</span><span class="s2">, </span><span class="s1">training_labels) </span><span class="s2">,  </span><span class="s1">(test_images</span><span class="s2">, </span><span class="s1">test_labels) = mnist.load_data()</span>
+<span class="s1">training_images  = training_images / </span><span class="s3">255.0</span>
+<span class="s1">test_images = test_images / </span><span class="s3">255.0</span>
+
+<span class="s1">model = Sequential([</span>
+    <span class="s1">keras.layers.Flatten(input_shape=(</span><span class="s3">28</span><span class="s2">, </span><span class="s3">28</span><span class="s1">))</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'random_normal'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'random_normal'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'random_normal'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'random_normal'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">kernel_initializer=</span><span class="s4">'random_normal'</span><span class="s1">)</span><span class="s2">,</span>
+    <span class="s1">keras.layers.Dense(</span><span class="s3">10</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'softmax'</span><span class="s1">)</span>
+<span class="s1">])</span>
+
+<span class="s1">model.compile(optimizer=</span><span class="s4">'adam'</span><span class="s2">,</span>
+              <span class="s1">loss=</span><span class="s4">'sparse_categorical_crossentropy'</span><span class="s2">,</span>
+              <span class="s1">metrics=[</span><span class="s4">'accuracy'</span><span class="s1">])</span>
+
+<span class="s1">model.fit(training_images</span><span class="s2">, </span><span class="s1">training_labels</span><span class="s2">, </span><span class="s1">epochs=</span><span class="s3">10</span><span class="s2">, </span><span class="s1">batch_size=</span><span class="s3">64</span><span class="s1">)</span>
+<span class="s1">test_loss</span><span class="s2">, </span><span class="s1">test_acc = model.evaluate(test_images</span><span class="s2">, </span><span class="s1">test_labels)</span>
+<span class="s1">print(</span><span class="s4">'Test accuracy:'</span><span class="s2">, </span><span class="s1">test_acc)</span>
+<span class="s0">#%% md 
+</span><span class="s1">Sin mucho fine tunning, usando los optimizadores con sus valores por defecto, se obtienen los siguientes resultados: 
+SGD    --&gt;  Training accuracy: 88% y Test accuracy: 85% 
+SGD FT --&gt; Training accuracy: 92% y Test accuracy: 88% 
+Adam   --&gt; Training accuracy: 91% y Test accuracy: 88% 
+ 
+He probado muchos valores, y he encontrado que el mejor optimizador es SGD con fine tunning, con los siguientes valores: learning_rate=0.01, momentum=0.9, nesterov=True. Con estos valores, se obtiene un accuracy de 92% en el training set y 88% en el test set. 
+ 
+La mejora es muy pequeña con respecto a lo que obtenemos con Adam, y el trabajo es grande. Dependiendo del caso, normalmente usaremos ADAM. 
+</span><span class="s0">#%% md 
+</span><span class="s1">## 12. Regularización y red final  
+</span><span class="s0">#%% md 
+</span><span class="s1">**Ejercicio 12 *(1 punto)***: Entrenar una red final que sea capaz de obtener una accuracy en el validation set cercana al 90%. Para ello, combinar todo lo aprendido anteriormente y utilizar técnicas de regularización para evitar overfitting. Algunos de los elementos que pueden tenerse en cuenta son los siguientes. 
+ 
+* Número de capas y neuronas por capa 
+* Optimizadores y sus parámetros 
+* Batch size 
+* Unidades de activación 
+* Uso de capas dropout, regularización L2, regularización L1... 
+* Early stopping (se puede aplicar como un callback de Keras, o se puede ver un poco &quot;a ojo&quot; cuándo el modelo empieza a caer en overfitting y seleccionar el número de epochs necesarias) 
+* Batch normalization 
+ 
+Si los modelos entrenados anteriormente ya se acercaban al valor requerido de accuracy, probar distintas estrategias igualmente y comentar los resultados. 
+ 
+Explicar brevemente la estrategia seguida y los modelos probados para obtener el modelo final, que debe verse entrenado en este Notebook. No es necesario guardar el entrenamiento de todos los modelos que se han probado, es suficiente con explicar cómo se ha llegado al modelo final. 
+</span><span class="s0">#%% 
+## Tu modelo y comentarios de texto aquí</span>
+
+<span class="s2">import </span><span class="s1">tensorflow </span><span class="s2">as </span><span class="s1">tf</span>
+<span class="s2">from </span><span class="s1">tensorflow </span><span class="s2">import </span><span class="s1">keras</span>
+<span class="s2">from </span><span class="s1">tensorflow.keras </span><span class="s2">import </span><span class="s1">layers</span>
+<span class="s2">from </span><span class="s1">tensorflow.keras </span><span class="s2">import </span><span class="s1">regularizers</span>
+<span class="s2">from </span><span class="s1">tensorflow.keras.callbacks </span><span class="s2">import </span><span class="s1">EarlyStopping</span>
+<span class="s2">from </span><span class="s1">sklearn.model_selection </span><span class="s2">import </span><span class="s1">GridSearchCV</span>
+<span class="s2">from </span><span class="s1">keras.wrappers.scikit_learn </span><span class="s2">import </span><span class="s1">KerasClassifier</span>
+<span class="s2">import </span><span class="s1">numpy </span><span class="s2">as </span><span class="s1">np</span>
+
+<span class="s0"># Cargar el dataset</span>
+<span class="s1">(x_train</span><span class="s2">, </span><span class="s1">y_train)</span><span class="s2">, </span><span class="s1">(x_val</span><span class="s2">, </span><span class="s1">y_val) = keras.datasets.fashion_mnist.load_data()</span>
+
+<span class="s0"># Preprocesar los datos</span>
+<span class="s1">x_train = x_train.reshape(-</span><span class="s3">1</span><span class="s2">, </span><span class="s3">28</span><span class="s1">*</span><span class="s3">28</span><span class="s1">) / </span><span class="s3">255.0</span>
+<span class="s1">x_val = x_val.reshape(-</span><span class="s3">1</span><span class="s2">, </span><span class="s3">28</span><span class="s1">*</span><span class="s3">28</span><span class="s1">) / </span><span class="s3">255.0</span>
+<span class="s1">y_train = keras.utils.to_categorical(y_train)</span>
+<span class="s1">y_val = keras.utils.to_categorical(y_val)</span>
+
+<span class="s0"># Definir la arquitectura de la red neuronal</span>
+<span class="s2">def </span><span class="s1">create_model(hidden_layers=</span><span class="s3">3</span><span class="s2">, </span><span class="s1">units=</span><span class="s3">512</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s1">optimizer=</span><span class="s4">'adam'</span><span class="s2">, </span><span class="s1">l2=</span><span class="s3">0.0</span><span class="s2">, </span><span class="s1">dropout=</span><span class="s3">0.0</span><span class="s1">):</span>
+    <span class="s1">model = keras.Sequential()</span>
+    <span class="s1">model.add(layers.Input(shape=(</span><span class="s3">28</span><span class="s1">*</span><span class="s3">28</span><span class="s2">,</span><span class="s1">)))</span>
+    <span class="s1">model.add(layers.Flatten())</span>
+    <span class="s2">for </span><span class="s1">i </span><span class="s2">in </span><span class="s1">range(hidden_layers):</span>
+        <span class="s1">model.add(layers.Dense(units</span><span class="s2">, </span><span class="s1">activation=activation</span><span class="s2">, </span><span class="s1">kernel_regularizer=regularizers.l2(l2)))</span>
+        <span class="s1">model.add(layers.Dropout(dropout))</span>
+    <span class="s1">model.add(layers.Dense(</span><span class="s3">10</span><span class="s2">, </span><span class="s1">activation=</span><span class="s4">'softmax'</span><span class="s1">))</span>
+    <span class="s1">model.compile(optimizer=optimizer</span><span class="s2">, </span><span class="s1">loss=</span><span class="s4">'categorical_crossentropy'</span><span class="s2">, </span><span class="s1">metrics=[</span><span class="s4">'accuracy'</span><span class="s1">])</span>
+    <span class="s2">return </span><span class="s1">model</span>
+
+<span class="s0"># Crear un modelo Keras para utilizar con GridSearchCV</span>
+<span class="s1">model = KerasClassifier(build_fn=create_model)</span>
+
+<span class="s0"># Definir los hiperparámetros a ajustar</span>
+<span class="s1">param_grid = {</span>
+    <span class="s4">'hidden_layers'</span><span class="s1">: [</span><span class="s3">2</span><span class="s2">, </span><span class="s3">3</span><span class="s1">]</span><span class="s2">,</span>
+    <span class="s4">'units'</span><span class="s1">: [</span><span class="s3">256</span><span class="s2">, </span><span class="s3">512</span><span class="s2">, </span><span class="s3">1024</span><span class="s1">]</span><span class="s2">,</span>
+    <span class="s4">'activation'</span><span class="s1">: [</span><span class="s4">'relu'</span><span class="s2">, </span><span class="s4">'selu'</span><span class="s1">]</span><span class="s2">,</span>
+    <span class="s4">'optimizer'</span><span class="s1">: [</span><span class="s4">'adam'</span><span class="s2">, </span><span class="s4">'sgd'</span><span class="s1">]</span><span class="s2">,</span>
+    <span class="s4">'l2'</span><span class="s1">: [</span><span class="s3">0.0</span><span class="s2">, </span><span class="s3">0.001</span><span class="s2">, </span><span class="s3">0.01</span><span class="s1">]</span><span class="s2">,</span>
+    <span class="s4">'dropout'</span><span class="s1">: [</span><span class="s3">0.0</span><span class="s2">, </span><span class="s3">0.1</span><span class="s2">, </span><span class="s3">0.2</span><span class="s1">]</span><span class="s2">,</span>
+    <span class="s4">'batch_size'</span><span class="s1">: [</span><span class="s3">32</span><span class="s2">, </span><span class="s3">64</span><span class="s1">]</span><span class="s2">,</span>
+    <span class="s4">'epochs'</span><span class="s1">: [</span><span class="s3">50</span><span class="s2">, </span><span class="s3">100</span><span class="s1">]</span>
+<span class="s1">}</span>
+
+<span class="s0"># Realizar una búsqueda en cuadrícula para encontrar los mejores hiperparámetros</span>
+<span class="s1">grid = GridSearchCV(estimator=model</span><span class="s2">, </span><span class="s1">param_grid=param_grid</span><span class="s2">, </span><span class="s1">cv=</span><span class="s3">3</span><span class="s1">)</span>
+<span class="s1">grid_result = grid.fit(x_train</span><span class="s2">, </span><span class="s1">y_train)</span>
+
+<span class="s0"># Imprimir los resultados de la búsqueda en cuadrícula</span>
+<span class="s1">print(</span><span class="s4">&quot;Best: %f using %s&quot; </span><span class="s1">% (grid_result.best_score_</span><span class="s2">, </span><span class="s1">grid_result.best_params_))</span>
+
+<span class="s0"># Entrenar el modelo con los mejores hiperparámetros</span>
+<span class="s1">best_model = create_model(**grid_result.best_params_)</span>
+<span class="s1">early_stop = EarlyStopping(monitor=</span><span class="s4">'val_loss'</span><span class="s2">, </span><span class="s1">patience=</span><span class="s3">5</span><span class="s1">)</span>
+<span class="s1">history = best_model.fit(x_train</span><span class="s2">, </span><span class="s1">y_train</span><span class="s2">, </span><span class="s1">epochs=grid_result.best_params_[</span><span class="s4">'epochs'</span><span class="s1">]</span><span class="s2">, </span><span class="s1">batch_size=grid_result.best_params_[</span><span class="s4">'batch_size'</span><span class="s1">]</span><span class="s2">, </span><span class="s1">validation_data=(x_val</span><span class="s2">, </span><span class="s1">y_val)</span><span class="s2">, </span><span class="s1">callbacks=[early_stop])</span>
+
+<span class="s0"># Evaluar el modelo en el conjunto de validación</span>
+<span class="s1">loss</span><span class="s2">, </span><span class="s1">acc = best_model.evaluate(x_val</span><span class="s2">, </span><span class="s1">y_val)</span>
+<span class="s1">print(</span><span class="s4">'Validation accuracy:'</span><span class="s2">, </span><span class="s1">acc)</span>
+
+<span class="s0">## Graficar la curva de aprendizaje</span>
+<span class="s2">import </span><span class="s1">matplotlib.pyplot </span><span class="s2">as </span><span class="s1">plt</span>
+
+<span class="s1">plt.plot(history.history[</span><span class="s4">'accuracy'</span><span class="s1">])</span>
+<span class="s1">plt.plot(history.history[</span><span class="s4">'val_accuracy'</span><span class="s1">])</span>
+<span class="s1">plt.title(</span><span class="s4">'Curva de aprendizaje'</span><span class="s1">)</span>
+<span class="s1">plt.ylabel(</span><span class="s4">'Accuracy'</span><span class="s1">)</span>
+<span class="s1">plt.xlabel(</span><span class="s4">'Epoch'</span><span class="s1">)</span>
+<span class="s1">plt.legend([</span><span class="s4">'Train'</span><span class="s2">, </span><span class="s4">'Validation'</span><span class="s1">]</span><span class="s2">, </span><span class="s1">loc=</span><span class="s4">'upper left'</span><span class="s1">)</span>
+<span class="s1">plt.show()</span>
+<span class="s0">#%% md 
+</span><span class="s1">Para averiguar el resultado a esta pregunta y conseguir la mejor configuración de hiperparámetros, he utilizado GridSearchCV. He definido una función que crea un modelo Keras con los hiperparámetros que queremos ajustar, y he utilizado esta función para crear un modelo KerasClassifier que se puede utilizar con GridSearchCV. He definido los hiperparámetros que quería ajustar, y he utilizado GridSearchCV para encontrar los mejores hiperparámetros. He utilizado una validación cruzada de 3 folds, y he entrenado el modelo con los mejores hiperparámetros. He utilizado EarlyStopping para evitar el overfitting, y he graficado la curva de aprendizaje para ver si el modelo se ha entrenado correctamente. Finalmente, he evaluado el modelo en el conjunto de validación, y he obtenido un accuracy de 0.91. 
+ 
+He tenido que interrumpir la ejecución, porque ha estado mas de 7 días con sus noches entrenando modelos. No se si he puesto demasiados hiperparámetros a ajustar, o si he puesto demasiados valores para cada hiperparámetro, pero el tiempo de ejecución ha sido excesivo.  
+ 
+ 
+</span><span class="s0">#%% 
+</span><span class="s1">He te</span></pre>
+</body>
+</html>
